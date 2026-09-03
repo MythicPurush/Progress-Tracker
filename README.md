@@ -1,6 +1,6 @@
 # Progress Tracker - Life OS
 
-A personal study progress tracker built to help you stay consistent, track study time by subject, visualize progress through calendars and heatmaps, and analyze weekly, monthly, and yearly performance.
+A multi-user study progress tracker built to help you stay consistent, track study time by subject, visualize progress through calendars and heatmaps, and analyze weekly, monthly, and yearly performance while sharing progress with friends.
 
 ## Features
 
@@ -35,9 +35,13 @@ A personal study progress tracker built to help you stay consistent, track study
 - **Motivation Tracking**: Stay motivated with visual progress indicators
 
 ### 🔐 Data Management
-- **Local Storage**: All data is saved locally on your computer
+- **Account-based Storage**: Data is tied to your account and stored in an app-managed SQLite database
 - **Backup & Restore**: Easy backup and restore functionality
-- **No Cloud Required**: Complete privacy with local-only data storage
+- **Privacy Controls**: Choose whether friends can view full session history or totals only
+
+### 👥 Social Tracking
+- **Friend Requests**: Send, accept, reject, or block friend connections
+- **Shared Progress Views**: View friend dashboards with server-side privacy enforcement
 
 ## Getting Started
 
