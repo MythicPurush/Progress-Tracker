@@ -392,7 +392,6 @@ function registerIpcHandlers() {
     `).run(userId, email, hash, salt, displayName, now, now);
 
     ensureUserSettings(userId);
-    createDefaultSubjects(userId);
     migrateLegacyDataIfNeeded(userId);
 
     const token = issueToken(userId);

@@ -259,49 +259,57 @@ function growthPage() {
 }
 
 async function friendsPage() {
-  const rows = await callApi(window.studyAPI.listFriends, { token: authToken });
-  $('#content').innerHTML = `<div class="page"><div class="card"><div class="cardhead"><h3>Friends</h3><button class="primary small" id="refreshFriends">Refresh</button></div><div class="muted">View accepted friends' shared progress and manage relationships.</div>${rows.length ? `<div class="tablewrap mt"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Sharing</th><th>Actions</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.display_name)}</td><td>${esc(r.email)}</td><td>${esc(r.status)}</td><td>${esc(r.sharing_level)}</td><td>${r.status === 'accepted' ? `<button class="iconbtn" data-view="${r.id}">View</button>` : ''} <button class="iconbtn danger" data-block="${r.friendship_id}">Block</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty mt">No friends yet.</div>'}</div></div>`;
-  $('#refreshFriends').onclick = () => render();
-  document.querySelectorAll('[data-view]').forEach(b => b.onclick = async () => {
-    try {
-      await loadFriendData(b.dataset.view);
-      page = 'home';
-      syncNav();
-      render();
-    } catch (e) { toast(e.message); }
-  });
-  document.querySelectorAll('[data-block]').forEach(b => b.onclick = async () => {
-    if (!confirm('Block this user?')) return;
-    try {
-      await callApi(window.studyAPI.blockFriend, { token: authToken, friendshipId: b.dataset.block });
-      if (friendView && friendView.user && rows.some(r => r.id === friendView.user.id && r.friendship_id === b.dataset.block)) friendView = null;
-      render();
-    } catch (e) { toast(e.message); }
-  });
+  try {
+    const rows = await callApi(window.studyAPI.listFriends, { token: authToken });
+    $('#content').innerHTML = `<div class="page"><div class="card"><div class="cardhead"><h3>Friends</h3><button class="primary small" id="refreshFriends">Refresh</button></div><div class="muted">View accepted friends' shared progress and manage relationships.</div>${rows.length ? `<div class="tablewrap mt"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Sharing</th><th>Actions</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.display_name)}</td><td>${esc(r.email)}</td><td>${esc(r.status)}</td><td>${esc(r.sharing_level)}</td><td>${r.status === 'accepted' ? `<button class="iconbtn" data-view="${r.id}">View</button>` : ''} <button class="iconbtn danger" data-block="${r.friendship_id}">Block</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty mt">No friends yet.</div>'}</div></div>`;
+    $('#refreshFriends').onclick = () => render();
+    document.querySelectorAll('[data-view]').forEach(b => b.onclick = async () => {
+      try {
+        await loadFriendData(b.dataset.view);
+        page = 'home';
+        syncNav();
+        render();
+      } catch (e) { toast(e.message); }
+    });
+    document.querySelectorAll('[data-block]').forEach(b => b.onclick = async () => {
+      if (!confirm('Block this user?')) return;
+      try {
+        await callApi(window.studyAPI.blockFriend, { token: authToken, friendshipId: b.dataset.block });
+        if (friendView && friendView.user && rows.some(r => r.id === friendView.user.id && r.friendship_id === b.dataset.block)) friendView = null;
+        render();
+      } catch (e) { toast(e.message); }
+    });
+  } catch (e) {
+    $('#content').innerHTML = `<div class="page"><div class="card"><h3>Friends</h3><div class="muted">${esc(e.message)}</div></div></div>`;
+  }
 }
 
 async function requestsPage() {
-  const req = await callApi(window.studyAPI.listFriendRequests, { token: authToken });
-  $('#content').innerHTML = `<div class="page"><div class="grid g2"><div class="card"><h3>Send friend request</h3><input id="friendEmail" class="modal-input" type="email" placeholder="friend@example.com"><button class="primary mt-10" id="sendReq">Send request</button></div><div class="card"><h3>Search users</h3><input id="searchInput" class="modal-input" type="text" placeholder="email fragment"><div id="searchRes" class="mt-10"></div></div></div><div class="grid g2 mt"><div class="card"><h3>Incoming</h3>${req.incoming.length ? req.incoming.map(r => `<div class="request-row"><div><b>${esc(r.display_name)}</b><small>${esc(r.email)}</small></div><div><button class="iconbtn" data-accept="${r.id}">Accept</button> <button class="iconbtn danger" data-reject="${r.id}">Reject</button></div></div>`).join('') : '<div class="empty">No incoming requests.</div>'}</div><div class="card"><h3>Outgoing</h3>${req.outgoing.length ? req.outgoing.map(r => `<div class="request-row"><div><b>${esc(r.display_name)}</b><small>${esc(r.email)}</small></div><div class="muted">Pending</div></div>`).join('') : '<div class="empty">No pending outgoing requests.</div>'}</div></div></div>`;
-  $('#sendReq').onclick = async () => {
-    const email = $('#friendEmail').value.trim();
-    try { await callApi(window.studyAPI.sendFriendRequest, { token: authToken, email }); toast('Friend request sent.'); render(); } catch (e) { toast(e.message); }
-  };
-  $('#searchInput').addEventListener('input', async () => {
-    const q = $('#searchInput').value.trim();
-    if (q.length < 3) { $('#searchRes').innerHTML = ''; return; }
-    try {
-      const res = await callApi(window.studyAPI.searchUsers, { token: authToken, query: q });
-      $('#searchRes').innerHTML = res.length ? `<div class="search-list">${res.map(u => `<div><b>${esc(u.display_name)}</b><small>${esc(u.email)}</small><button class="iconbtn" data-email="${esc(u.email)}">Request</button></div>`).join('')}</div>` : '<div class="muted">No matches.</div>';
-      document.querySelectorAll('[data-email]').forEach(btn => btn.onclick = async () => {
-        try { await callApi(window.studyAPI.sendFriendRequest, { token: authToken, email: btn.dataset.email }); toast('Friend request sent.'); render(); } catch (e) { toast(e.message); }
-      });
-    } catch (e) {
-      $('#searchRes').innerHTML = `<div class="muted">${esc(e.message)}</div>`;
-    }
-  });
-  document.querySelectorAll('[data-accept]').forEach(b => b.onclick = async () => { try { await callApi(window.studyAPI.respondFriendRequest, { token: authToken, friendshipId: b.dataset.accept, action: 'accept' }); render(); } catch (e) { toast(e.message); } });
-  document.querySelectorAll('[data-reject]').forEach(b => b.onclick = async () => { try { await callApi(window.studyAPI.respondFriendRequest, { token: authToken, friendshipId: b.dataset.reject, action: 'reject' }); render(); } catch (e) { toast(e.message); } });
+  try {
+    const req = await callApi(window.studyAPI.listFriendRequests, { token: authToken });
+    $('#content').innerHTML = `<div class="page"><div class="grid g2"><div class="card"><h3>Send friend request</h3><input id="friendEmail" class="modal-input" type="email" placeholder="friend@example.com"><button class="primary mt-10" id="sendReq">Send request</button></div><div class="card"><h3>Search users</h3><input id="searchInput" class="modal-input" type="text" placeholder="email fragment"><div id="searchRes" class="mt-10"></div></div></div><div class="grid g2 mt"><div class="card"><h3>Incoming</h3>${req.incoming.length ? req.incoming.map(r => `<div class="request-row"><div><b>${esc(r.display_name)}</b><small>${esc(r.email)}</small></div><div><button class="iconbtn" data-accept="${r.id}">Accept</button> <button class="iconbtn danger" data-reject="${r.id}">Reject</button></div></div>`).join('') : '<div class="empty">No incoming requests.</div>'}</div><div class="card"><h3>Outgoing</h3>${req.outgoing.length ? req.outgoing.map(r => `<div class="request-row"><div><b>${esc(r.display_name)}</b><small>${esc(r.email)}</small></div><div class="muted">Pending</div></div>`).join('') : '<div class="empty">No pending outgoing requests.</div>'}</div></div></div>`;
+    $('#sendReq').onclick = async () => {
+      const email = $('#friendEmail').value.trim();
+      try { await callApi(window.studyAPI.sendFriendRequest, { token: authToken, email }); toast('Friend request sent.'); render(); } catch (e) { toast(e.message); }
+    };
+    $('#searchInput').addEventListener('input', async () => {
+      const q = $('#searchInput').value.trim();
+      if (q.length < 3) { $('#searchRes').innerHTML = ''; return; }
+      try {
+        const res = await callApi(window.studyAPI.searchUsers, { token: authToken, query: q });
+        $('#searchRes').innerHTML = res.length ? `<div class="search-list">${res.map(u => `<div><b>${esc(u.display_name)}</b><small>${esc(u.email)}</small><button class="iconbtn" data-email="${esc(u.email)}">Request</button></div>`).join('')}</div>` : '<div class="muted">No matches.</div>';
+        document.querySelectorAll('[data-email]').forEach(btn => btn.onclick = async () => {
+          try { await callApi(window.studyAPI.sendFriendRequest, { token: authToken, email: btn.dataset.email }); toast('Friend request sent.'); render(); } catch (e) { toast(e.message); }
+        });
+      } catch (e) {
+        $('#searchRes').innerHTML = `<div class="muted">${esc(e.message)}</div>`;
+      }
+    });
+    document.querySelectorAll('[data-accept]').forEach(b => b.onclick = async () => { try { await callApi(window.studyAPI.respondFriendRequest, { token: authToken, friendshipId: b.dataset.accept, action: 'accept' }); render(); } catch (e) { toast(e.message); } });
+    document.querySelectorAll('[data-reject]').forEach(b => b.onclick = async () => { try { await callApi(window.studyAPI.respondFriendRequest, { token: authToken, friendshipId: b.dataset.reject, action: 'reject' }); render(); } catch (e) { toast(e.message); } });
+  } catch (e) {
+    $('#content').innerHTML = `<div class="page"><div class="card"><h3>Friend Requests</h3><div class="muted">${esc(e.message)}</div></div></div>`;
+  }
 }
 
 function profilePage() {
