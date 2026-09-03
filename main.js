@@ -27,6 +27,20 @@ function newId() {
   return crypto.randomUUID();
 }
 
+function withTransaction(work) {
+  db.exec('BEGIN');
+  try {
+    const result = work();
+    db.exec('COMMIT');
+    return result;
+  } catch (error) {
+    try {
+      db.exec('ROLLBACK');
+    } catch {}
+    throw error;
+  }
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1500,
@@ -215,7 +229,7 @@ function migrateLegacyDataIfNeeded(userId) {
     return;
   }
 
-  const tx = db.transaction(() => {
+  withTransaction(() => {
     const now = nowIso();
     const insertSubject = db.prepare('INSERT OR IGNORE INTO subjects(id, user_id, name, name_norm, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?)');
     const insertSession = db.prepare('INSERT INTO sessions(id, user_id, started, seconds, subject, created_at) VALUES(?, ?, ?, ?, ?, ?)');
@@ -243,8 +257,6 @@ function migrateLegacyDataIfNeeded(userId) {
 
     db.prepare('UPDATE user_settings SET legacy_imported = 1, updated_at = ? WHERE user_id = ?').run(nowIso(), userId);
   });
-
-  tx();
 }
 
 function getOwnData(userId) {
@@ -457,11 +469,10 @@ function registerIpcHandlers() {
     const existing = db.prepare('SELECT id, name FROM subjects WHERE id = ? AND user_id = ?').get(subjectId, user.id);
     if (!existing) throw new Error('Subject not found.');
 
-    const tx = db.transaction(() => {
+    withTransaction(() => {
       db.prepare('UPDATE subjects SET name = ?, name_norm = ?, updated_at = ? WHERE id = ?').run(name, name.toLowerCase(), nowIso(), subjectId);
       db.prepare('UPDATE sessions SET subject = ? WHERE user_id = ? AND subject = ?').run(name, user.id, existing.name);
     });
-    tx();
     return getOwnData(user.id);
   });
 
@@ -484,13 +495,12 @@ function registerIpcHandlers() {
     const subject = normalizeSubjectName(payload?.subject || 'Uncategorized') || 'Uncategorized';
     if (seconds < 1) throw new Error('Session duration must be at least 1 second.');
 
-    const tx = db.transaction(() => {
+    withTransaction(() => {
       db.prepare('INSERT INTO sessions(id, user_id, started, seconds, subject, created_at) VALUES(?, ?, ?, ?, ?, ?)')
         .run(newId(), user.id, started, seconds, subject, nowIso());
       db.prepare('INSERT OR IGNORE INTO subjects(id, user_id, name, name_norm, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?)')
         .run(newId(), user.id, subject, subject.toLowerCase(), nowIso(), nowIso());
     });
-    tx();
 
     return getOwnData(user.id);
   });
@@ -654,7 +664,7 @@ function registerIpcHandlers() {
     const raw = JSON.parse(fs.readFileSync(r.filePaths[0], 'utf8'));
     const restored = sanitizeExport(raw);
 
-    const tx = db.transaction(() => {
+    withTransaction(() => {
       db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
       db.prepare('DELETE FROM subjects WHERE user_id = ?').run(user.id);
 
@@ -669,7 +679,6 @@ function registerIpcHandlers() {
         addSession.run(session.id, user.id, session.started, session.seconds, session.subject, now);
       }
     });
-    tx();
 
     return getOwnData(user.id);
   });
