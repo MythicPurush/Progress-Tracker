@@ -1,8 +1,47 @@
 <!doctype html>
-<html><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"><title>Progress Tracker // Life OS</title><link rel="stylesheet" href="style.css"></head>
-<body><div class="app">
-<aside><div class="brand"><div class="brandmark">P</div><div><b>PROGRESS</b><small>LIFE OS</small></div></div>
-<nav id="nav">
-<button data-page="home" class="active">⌂ Overview</button><button data-page="timer">◷ Timer</button><button data-page="calendar">▦ Calendar</button><button data-page="analytics">⌁ Statistics</button><button data-page="consistency">◌ Consistency</button><button data-page="history">↺ History</button><button data-page="growth">◇ Growth</button>
-</nav><div class="sidebottom"><button id="backup">Backup now</button><button id="restore">Restore data</button><small>Saved locally on this computer.</small></div></aside>
-<main><header><div><div class="eyebrow">PERSONAL PROGRESS SYSTEM</div><h1 id="title">Overview</h1></div><div class="header-right"><div class="level-pill">LEVEL <b id="level">1</b></div><button class="primary" id="quickTimer">Start timer</button></div></header><section id="content"></section></main></div><script src="app.js"></script></body></html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>Progress Tracker // Life OS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand"><div class="brandmark">P</div><div><b>PROGRESS</b><small>LIFE OS</small></div></div>
+      <nav id="nav">
+        <button data-page="home" class="active">⌂ Overview</button>
+        <button data-page="timer">◷ Timer</button>
+        <button data-page="calendar">▦ Calendar</button>
+        <button data-page="analytics">⌁ Statistics</button>
+        <button data-page="consistency">◌ Consistency</button>
+        <button data-page="history">↺ History</button>
+        <button data-page="growth">◇ Growth</button>
+        <button data-page="friends">👥 Friends</button>
+        <button data-page="requests">✉ Requests</button>
+        <button data-page="profile">⚙ Profile</button>
+      </nav>
+      <div class="sidebottom">
+        <button id="backup">Backup now</button>
+        <button id="restore">Restore data</button>
+        <small id="storageNote">Cloud data mode active.</small>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <div class="eyebrow" id="headerMode">PERSONAL PROGRESS SYSTEM</div>
+          <h1 id="title">Overview</h1>
+        </div>
+        <div class="header-right">
+          <div class="level-pill">LEVEL <b id="level">1</b></div>
+          <button class="primary" id="quickTimer">Start timer</button>
+        </div>
+      </header>
+      <section id="content"></section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
